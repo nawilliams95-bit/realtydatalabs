@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const propertyRoutes = require("./propertyRoutes");
+const propertyRoutes = require("./routes/propertyRoutes");
 
 const app = express();
 const port = 5000;
