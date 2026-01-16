@@ -16,6 +16,10 @@ function getGitCommitShort() {
   }
 }
 
+function isNonEmptyString(v) {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
 // GET /api/v1/analysis/health
 router.get("/health", (req, res) => {
   const emulator = {
@@ -23,11 +27,20 @@ router.get("/health", (req, res) => {
     firestoreEmulatorHost: process.env.FIRESTORE_EMULATOR_HOST || null,
   };
 
+  const providers = {
+    rentcast: {
+      enabled: process.env.USE_RENTCAST === "true",
+      hasApiKey: isNonEmptyString(process.env.RENTCAST_API_KEY),
+      baseUrl: process.env.RENTCAST_BASE_URL || "https://api.rentcast.io",
+    },
+  };
+
   return res.status(200).json({
     ok: true,
     service: "property_analysis",
     engine: "rules_v1",
     emulator,
+    providers,
     serverTimeIso: new Date().toISOString(),
   });
 });
