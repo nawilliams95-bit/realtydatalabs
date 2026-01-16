@@ -66,3 +66,18 @@ test("multi_family infers unitCount from units array and clears MF_UNIT_COUNT_MI
   const flagCodes = (out.report.flags || []).map((f) => f.code);
   assert.ok(!flagCodes.includes("MF_UNIT_COUNT_MISSING"));
 });
+
+test("rules_v1 analyzer uses single_family pack for townhouse and does not fall back", () => {
+  const out = analyzeRulesV1({
+    propertyType: "townhouse",
+    address: { line1: "123 Main St", city: "Atlanta", state: "GA", postalCode: "30303" },
+  });
+
+  assert.equal(out.ok, true);
+
+  const flagCodes = (out.report.flags || []).map((f) => f.code);
+  assert.ok(!flagCodes.includes("NO_RULE_PACK_FOR_PROPERTY_TYPE"));
+
+  // Single-family missingStructural rule should reliably fire for minimal input
+  assert.ok(flagCodes.includes("MISSING_YEAR_BUILT") || flagCodes.includes("MISSING_SQFT"));
+});

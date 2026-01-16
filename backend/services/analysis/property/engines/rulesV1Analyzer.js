@@ -16,6 +16,8 @@ function getRulePack(propertyType) {
   switch (propertyType) {
     case PROPERTY_TYPES.SINGLE_FAMILY:
       return singleFamilyPack;
+    case PROPERTY_TYPES.TOWNHOUSE:
+      return singleFamilyPack; // townhouse uses single_family pack v1
     case PROPERTY_TYPES.CONDO:
       return condoPack;
     case PROPERTY_TYPES.LAND:
