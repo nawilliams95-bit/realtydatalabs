@@ -1,10 +1,20 @@
 const express = require("express");
 const router = express.Router();
+const { execSync } = require("node:child_process");
 
 const {
   runPropertyAnalysis,
   fetchPropertyAnalysis,
 } = require("../services/analysis/property/propertyAnalysisService");
+
+function getGitCommitShort() {
+  try {
+    const out = execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] });
+    return String(out).trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 // GET /api/v1/analysis/health
 router.get("/health", (req, res) => {
@@ -18,6 +28,16 @@ router.get("/health", (req, res) => {
     service: "property_analysis",
     engine: "rules_v1",
     emulator,
+    serverTimeIso: new Date().toISOString(),
+  });
+});
+
+// GET /api/v1/analysis/version
+router.get("/version", (req, res) => {
+  return res.status(200).json({
+    ok: true,
+    service: "property_analysis",
+    gitCommitShort: getGitCommitShort(),
     serverTimeIso: new Date().toISOString(),
   });
 });
