@@ -11,6 +11,7 @@ const singleFamilyPack = require("../rules/packs/single_family");
 const condoPack = require("../rules/packs/condo");
 const landPack = require("../rules/packs/land");
 const multiFamilyPack = require("../rules/packs/multi_family");
+const otherPack = require("../rules/packs/other");
 
 function getRulePack(propertyType) {
   switch (propertyType) {
@@ -24,6 +25,8 @@ function getRulePack(propertyType) {
       return landPack;
     case PROPERTY_TYPES.MULTI_FAMILY:
       return multiFamilyPack;
+    case PROPERTY_TYPES.OTHER:
+      return otherPack;
     default:
       return [];
   }

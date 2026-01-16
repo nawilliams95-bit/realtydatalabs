@@ -81,3 +81,18 @@ test("rules_v1 analyzer uses single_family pack for townhouse and does not fall 
   // Single-family missingStructural rule should reliably fire for minimal input
   assert.ok(flagCodes.includes("MISSING_YEAR_BUILT") || flagCodes.includes("MISSING_SQFT"));
 });
+
+test("rules_v1 analyzer uses OTHER pack and does not fall back", () => {
+  const out = analyzeRulesV1({
+    propertyType: "other",
+    address: { line1: "123 Main St", city: "Atlanta", state: "GA", postalCode: "30303" },
+  });
+
+  assert.equal(out.ok, true);
+
+  const flagCodes = (out.report.flags || []).map((f) => f.code);
+  assert.ok(!flagCodes.includes("NO_RULE_PACK_FOR_PROPERTY_TYPE"));
+
+  // OTHER pack should emit at least one known OTHER flag for minimal input
+  assert.ok(flagCodes.includes("OTHER_YEAR_BUILT_MISSING") || flagCodes.includes("OTHER_ROOF_YEAR_UNKNOWN"));
+});
