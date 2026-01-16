@@ -1,7 +1,11 @@
-const admin = require("firebase-admin");
+/**
+ * Compatibility wrapper.
+ * Forces all Firebase Admin initialization through firebaseAdmin.js (emulator-safe),
+ * while exporting the same shape repositories expect: { admin, db }.
+ */
+const initFirebaseAdmin = require("./firebaseAdmin");
 
-admin.initializeApp();
-
+const admin = initFirebaseAdmin();
 const db = admin.firestore();
 
-module.exports = { db };
+module.exports = { admin, db };
