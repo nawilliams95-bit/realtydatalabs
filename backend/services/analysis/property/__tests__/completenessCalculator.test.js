@@ -44,3 +44,21 @@ test("condo completeness uses condo recommended fields (9)", () => {
   assert.equal(c.coverage, 0);
   assert.equal(c.missingRecommended.length, 9);
 });
+
+test("other completeness uses OTHER recommended fields (5)", () => {
+  const canonical = {
+    propertyType: "other",
+    parcelId: null,
+    address: { line1: "123 Main St", city: "Atlanta", state: "GA", postalCode: "30303" },
+    characteristics: { yearBuilt: null },
+    systems: { roof: { yearUpdated: null }, hvac: { yearUpdated: null } },
+    utilities: { waterSource: null, sewerType: null },
+  };
+
+  const c = calculateCompleteness(canonical);
+
+  // OTHER recommended list is 5 fields. All are missing here.
+  assert.deepEqual(c.missingRequired, []);
+  assert.equal(c.coverage, 0);
+  assert.equal(c.missingRecommended.length, 5);
+});

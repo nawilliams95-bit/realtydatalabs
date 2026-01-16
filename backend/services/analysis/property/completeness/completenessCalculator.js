@@ -83,6 +83,15 @@ function getRecommendedFieldsByType(propertyType) {
         "utilities.sewerType",
       ];
 
+    case PROPERTY_TYPES.OTHER:
+      return [
+        "characteristics.yearBuilt",
+        "systems.roof.yearUpdated",
+        "systems.hvac.yearUpdated",
+        "utilities.waterSource",
+        "utilities.sewerType",
+      ];
+
     default:
       return ["characteristics.yearBuilt", "characteristics.livingAreaSqft"];
   }
