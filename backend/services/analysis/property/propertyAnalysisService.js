@@ -168,16 +168,15 @@ async function maybeEnrichWithRentCast(payload, rawPropertyInput, options) {
 
     return { enrichedProperty, sources };
   } catch (err) {
-    if (err instanceof ProviderError) {
-      throw makeBadGatewayError("RentCast enrichment failed.", [
-        { provider: "rentcast", code: err.code, status: err.status, details: err.details },
-      ]);
-    }
-    throw err;
+  if (err instanceof ProviderError) {
+    throw makeBadGatewayError("RentCast enrichment failed.", [
+      { provider: "rentcast", code: err.code, status: err.status, details: err.details },
+    ]);
   }
+  throw err;
 }
 
-/**
+}/**
  * payload is expected to be the request body.
  * Supports both shapes:
  *  - { property: {...} } (preferred)
