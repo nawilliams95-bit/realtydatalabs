@@ -25,6 +25,43 @@ function toNullableBoolean(v) {
   return null;
 }
 
+function mapRentcastPropertyTypeToInternal(rawProviderType) {
+  const raw = toNullableString(rawProviderType);
+  if (!raw) return null;
+
+  const t = raw.toLowerCase();
+
+  // Required: RentCast "Manufactured" should map into our internal enum.
+  if (
+    t === "manufactured" ||
+    t === "manufactured home" ||
+    t === "mobile" ||
+    t === "mobile home" ||
+    t === "modular" ||
+    t === "modular home"
+  ) {
+    return PROPERTY_TYPES.SINGLE_FAMILY;
+  }
+
+  // Conservative extras, low risk.
+  if (t === "condo" || t === "condominium") return PROPERTY_TYPES.CONDO;
+  if (t === "land" || t === "lot" || t === "vacant land") return PROPERTY_TYPES.LAND;
+
+  if (
+    t === "multi family" ||
+    t === "multifamily" ||
+    t === "apartment" ||
+    t === "duplex" ||
+    t === "triplex" ||
+    t === "quadplex" ||
+    t === "fourplex"
+  ) {
+    return PROPERTY_TYPES.MULTI_FAMILY;
+  }
+
+  return null;
+}
+
 function normalizeAddress(inputAddress) {
   const a = inputAddress || {};
   return {
@@ -116,7 +153,7 @@ function normalizeToCanonicalProperty(raw) {
   const src = raw || {};
 
   const rawType = src.propertyType || src.type;
-  const propertyType = isSupportedPropertyType(rawType) ? rawType : PROPERTY_TYPES.OTHER;
+  let propertyType = isSupportedPropertyType(rawType) ? rawType : PROPERTY_TYPES.OTHER;
 
   const address = normalizeAddress(src.address);
 
@@ -135,25 +172,37 @@ function normalizeToCanonicalProperty(raw) {
       (src.characteristics && src.characteristics.livingAreaSqft)
   );
 
-  const bedrooms = toNullableNumber(src.bedrooms || (src.characteristics && src.characteristics.bedrooms));
-  const bathrooms = toNullableNumber(src.bathrooms || (src.characteristics && src.characteristics.bathrooms));
+  const bedrooms = toNullableNumber(
+    src.bedrooms || (src.characteristics && src.characteristics.bedrooms)
+  );
+  const bathrooms = toNullableNumber(
+    src.bathrooms || (src.characteristics && src.characteristics.bathrooms)
+  );
 
   const roofYearUpdated = toNullableNumber(
-    (src.systems && src.systems.roof && src.systems.roof.yearUpdated) || src.roofYearUpdated || src.roofYear
+    (src.systems && src.systems.roof && src.systems.roof.yearUpdated) ||
+      src.roofYearUpdated ||
+      src.roofYear
   );
 
   const hvacYearUpdated = toNullableNumber(
-    (src.systems && src.systems.hvac && src.systems.hvac.yearUpdated) || src.hvacYearUpdated || src.hvacYear
+    (src.systems && src.systems.hvac && src.systems.hvac.yearUpdated) ||
+      src.hvacYearUpdated ||
+      src.hvacYear
   );
 
   const hasHoa = toNullableBoolean((src.hoa && src.hoa.hasHoa) || src.hasHoa || src.isHoa);
 
-  const hoaFeeMonthly = toNullableNumber((src.hoa && src.hoa.feeMonthly) || src.hoaFeeMonthly || src.hoaMonthlyFee);
+  const hoaFeeMonthly = toNullableNumber(
+    (src.hoa && src.hoa.feeMonthly) || src.hoaFeeMonthly || src.hoaMonthlyFee
+  );
 
   const waterSource = toNullableString((src.utilities && src.utilities.waterSource) || src.waterSource);
   const sewerType = toNullableString((src.utilities && src.utilities.sewerType) || src.sewerType);
 
-  const occupancyStatus = toNullableString((src.occupancy && src.occupancy.status) || src.occupancyStatus || src.occupied);
+  const occupancyStatus = toNullableString(
+    (src.occupancy && src.occupancy.status) || src.occupancyStatus || src.occupied
+  );
   const ownerOccupied = toNullableBoolean((src.occupancy && src.occupancy.ownerOccupied) || src.ownerOccupied);
 
   const unitsArray = pickUnitsArray(src);
@@ -172,12 +221,31 @@ function normalizeToCanonicalProperty(raw) {
   const geo = normalizeGeo(src);
   const provider = normalizeProvider(src);
 
+  // Provider-to-canonical propertyType mapping.
+  // Only apply when caller did not provide a supported internal type.
+  // This keeps rules_v1 pack selection coherent, while preserving existing behavior for valid inputs.
+  let provenance = null;
+  if (propertyType === PROPERTY_TYPES.OTHER && provider && provider.rentcastPropertyType) {
+    const mapped = mapRentcastPropertyTypeToInternal(provider.rentcastPropertyType);
+    if (mapped && isSupportedPropertyType(mapped)) {
+      propertyType = mapped;
+      provenance = {
+        propertyType: {
+          provider: "rentcast",
+          raw: provider.rentcastPropertyType,
+          mapped,
+        },
+      };
+    }
+  }
+
   return {
     propertyType,
     parcelId,
     address,
     geo,
     provider,
+    ...(provenance ? { provenance } : {}),
     characteristics: {
       yearBuilt,
       livingAreaSqft,
