@@ -1,8 +1,13 @@
 {
-  "firestore": {
-    "database": "(default)",
-    "location": "nam5",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 18080
+    },
+    "ui": {
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 4400
+    }
   }
 }
