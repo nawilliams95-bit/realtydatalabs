@@ -1,3 +1,4 @@
+// backend/routes/propertyAnalysisRoutes.js
 const express = require("express");
 const router = express.Router();
 const { execSync } = require("node:child_process");
@@ -32,6 +33,15 @@ function isProdEnv() {
 function rentcastKeyLen() {
   if (!isNonEmptyString(process.env.RENTCAST_API_KEY)) return 0;
   return String(process.env.RENTCAST_API_KEY).length;
+}
+
+function parseCsvQueryParam(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.flatMap(parseCsvQueryParam);
+  return String(v)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 // GET /api/v1/analysis/health
@@ -118,7 +128,15 @@ router.post("/provider/rentcast/property", async (req, res, next) => {
 // POST /api/v1/analysis/property
 router.post("/property", async (req, res, next) => {
   try {
-    const result = await runPropertyAnalysis(req.body, { persist: true });
+    // Support query string enrichment: ?enrich=rentcast
+    const enrichList = parseCsvQueryParam(req.query.enrich).map((s) => s.toLowerCase());
+    const options = { persist: true };
+
+    if (enrichList.includes("rentcast")) {
+      options.enrichProvider = "rentcast";
+    }
+
+    const result = await runPropertyAnalysis(req.body, options);
     return res.status(201).json(result);
   } catch (err) {
     return next(err);
@@ -128,7 +146,20 @@ router.post("/property", async (req, res, next) => {
 // GET /api/v1/analysis/property/:id
 router.get("/property/:id", async (req, res, next) => {
   try {
-    const result = await fetchPropertyAnalysis(req.params.id);
+    // Support include flags: ?include=input,sources
+    const includeList = parseCsvQueryParam(req.query.include).map((s) => s.toLowerCase());
+
+    const opts = {
+      includeInput: includeList.includes("input"),
+      includeSources: includeList.includes("sources"),
+    };
+
+    // Preserve default behavior when no includes are requested
+    const anyIncludes = opts.includeInput || opts.includeSources;
+    const result = anyIncludes
+      ? await fetchPropertyAnalysis(req.params.id, opts)
+      : await fetchPropertyAnalysis(req.params.id);
+
     return res.status(200).json(result);
   } catch (err) {
     return next(err);
